@@ -1,0 +1,208 @@
+##################################################################
+#  Mastermind - Laboratorio 1 de OAC                   #
+#  2020/2			  			         #
+##################################################################
+
+
+j MAIN
+
+###########################################
+#                                         #
+#             	MACROS GERAIS             #
+#                                         #
+###########################################
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------#
+IMPRESSAO:
+
+#la t0, %data
+#li s0,%hexf0 
+#li a0, %time
+
+#%data = arquivo.data a ser imprimido
+#%hex = endereco inicial de print/frame----> 0xFF000000, endereco inicial no frame 0	 0xFF100000, endereco inicial no frame 0
+#%time = Pausa em milissegundos para mostrar a imagem,caso coloque zero nao havera pausa
+#%funcao = nome de funcao para se seguir assim que a imagem for por completo imprimida
+
+	lw t1, 0(t0) 		#x(linhas)
+	lw t2, 4(t0) 		#y(colunas)
+	mul t3, t1, t2		#numero total de pixels
+	addi t0, t0, 8		#Primeiro pixel
+	li t4, 0		#contador
+	
+# Pausa em milissegundos para mostrar a imagem
+li a7, 32
+ecall	
+	
+#J?? com a imagem carregada, ocorre impressao nesse loop	
+IMPRIME:
+	beq t4, t3, Impressao_FIM
+	lw t5, 0(t0)
+	sw t5, 0(s0)
+	addi t0, t0, 4
+	addi s0, s0, 4	
+	addi t4, t4, 4	
+	j 	IMPRIME	
+
+Impressao_FIM:
+	jr s5		#volta pra s5		
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------#
+IMPRESSAO_PEQUENA:
+#la t0, %data
+#li s0,%hexf0 
+#li a0, %time
+#li s1, %pula
+
+#%data = arquivo.data a ser imprimido
+#%hex = endereco inicial de print/frame----> 0xFF000000, endereco inicial no frame 0	 0xFF100000, endereco inicial no frame 0
+#%time = Pausa em milissegundos para mostrar a imagem,caso coloque zero nao havera pausa
+#%funcao = nome de funcao para se seguir assim que a imagem for por completo imprimida
+#%pula = valor em hex de quantos pixels se deve pular para comer a imprimir
+
+    lw t1, 0(t0)         #x(linhas)
+    lw t2, 4(t0)         #y(colunas)
+    lw t6, 0(t0)       	 #armazena o n de linhas da imagem para incrementar em t1 sem ser alterado
+    mul t3, t1, t2       #numero total de pixels
+    addi t0, t0, 8       #Primeiro pixel
+    li t4, 0        	 #contador
+
+    
+# Pausa em milissegundos para mostrar a imagem
+li a7, 32
+ecall    
+    
+#J? com a imagem carregada, ocorre impressao nesse loop    
+IMPRIME_F0:
+    beq t4, t3, Impressaopequena_FIM       #quando finalizar, pula para a fun?o desejada
+    lb t5, 0(t0)
+    sb t5, 0(s0)
+    addi t0, t0, 1
+    addi s0, s0, 1    
+    addi t4, t4, 1
+    beq t4, t6, PULA_F0        #quando chegar ao final de uma linha, pula para a seguinte    
+    j     IMPRIME_F0
+    
+    PULA_F0:
+    add t6, t6, t1            #incrementa o numero de pixels impressos pelo n de linhas para o proximo beq ainda pular linha.
+    add s0, s0, s1
+    j IMPRIME_F0    
+    
+Impressaopequena_FIM:
+	jr s5		#volta pra s5
+
+
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------#
+IMPRESSAO_BOLA:
+#la t0, %data
+#li s0,%hexf0 
+#li a0, %time
+#li s1, %pula
+#li s2 %cor
+
+#%data = arquivo.data a ser imprimido
+#%hex = endereco inicial de print/frame----> 0xFF000000, endereco inicial no frame 0	 0xFF100000, endereco inicial no frame 0
+#%time = Pausa em milissegundos para mostrar a imagem,caso coloque zero nao havera pausa
+#%funcao = nome de funcao para se seguir assim que a imagem for por completo imprimida
+#%pula = valor em hex de quantos pixels se deve pular para comer a imprimir
+#%cor da bola a ser impressa
+
+#-------------------------------FRAME 0---------------------------------#
+F0:
+    lw t1, 0(t0)        #x(linhas)
+    lw t2, 4(t0)        #y(colunas)
+    lw t6, 0(t0)        #armazena o n de linhas da imagem para incrementar em t1 sem ser alterado
+    mul t3, t1, t2      #numero total de pixels
+    addi t0, t0, 8      #Primeiro pixel
+    li t4, 0        	#contador
+
+    
+# Pausa em milissegundos para mostrar a imagem
+li a7, 32
+
+ecall    
+    
+#J? com a imagem carregada, ocorre impressao nesse loop    
+IMPRIME_F0_FIM:
+    beq t4, t3, Impressaopequena_BOLA_FIM        #quando finalizar, pula para a fun?o desejada
+    lb t5, 0(t0)
+    
+    li s11, 1
+    beq t5, s11, COR
+    
+    sb t5, 0(s0)
+    j COR_PULA
+    COR:
+    sb s2,0(s0)
+    
+    COR_PULA:
+    
+    addi t0, t0, 1
+    addi s0, s0, 1    
+    addi t4, t4, 1
+    beq t4, t6, PULA_F0_FIM        #quando chegar ao final de uma linha, pula para a seguinte    
+    j     IMPRIME_F0_FIM
+    
+    PULA_F0_FIM:
+    add t6, t6, t1            #incrementa o numero de pixels impressos pelo n de linhas para o pr?imo beq ainda pular linha.
+    add s0, s0, s1
+    j IMPRIME_F0_FIM    
+    
+    
+Impressaopequena_BOLA_FIM:
+	jr s5		#volta pra s5
+
+
+
+
+
+
+
+#.include "MACROSv21.s"	
+
+.data
+POSICAO_CODIGO:  .word 0, 0	# o primeiro valor corresponde ao frame 0, o segundo ao frame 1. uso: 0(t0), 4(s0)
+
+
+#lista de cores possiveis para N
+v:  .byte 110, 10, 200, 250
+
+
+
+
+.text
+
+MAIN:
+	la  s5, v	#armazena em t0 a lista v
+	li  s3, 30	#tamanho da lista v (n)
+	mv s4, zero	#contador
+LOOP_MAIN:
+	
+	beq s4,s3,FIM_MAIN
+	lb   s2,0(s5)	#cor
+	#Print bola
+	la t0, caixa
+   	li s0,0xFF008C20
+	li a0, 32
+	li s1, 0x130
+	#li s2, 150
+	jal s5, IMPRESSAO_BOLA
+	
+	addi    s5,s5,1
+        addi    s4,s4,1
+	j LOOP_MAIN
+	
+FIM_MAIN:
+	li      a7,11 
+        li      a0,10 
+        ecall 
+
+
+AA:
+
+.data
+.include "./Imagens/portaaberta.data"
