@@ -13,6 +13,68 @@ j MAIN
 ###########################################
 
 
+#Instrumentos
+#0-7 	Piano			8-15 	Chromatic Percussion
+
+#16-23	Organ			24-31	Guitar
+
+#32-39 	Bass			40-47  Strings
+
+#48-55 	Ensemble		56-63	Brass
+
+#64-71	Reed			72-79	Pipe
+	
+#80-87	Synth Lead		88-95	Synth Pad
+
+#96-103 Synth Effects		104-111 Ethnic
+
+#112-119 Percussion		120-127	Sound Effects
+
+
+#efeitos sonoros de uma nota
+#(80, 150, 99, 127)
+#PLAY_SOUND:(%a0, %a1, %a2, %a3)
+#li a0,%a0	#nota
+#li a1,%a1	#time
+#li a2,%a2	#instrumento
+#li a3,%a3	#volume
+#li a7,33
+#ecall
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+FRAME:
+#li t0, %frame	
+#muda para o frame desejado
+li a5, 0xFF200604	#Carrega o endere?Â¡Ã¬o respons??vel pela troca de frame
+sw t0, 0(a5)		#sempre vai come?Â¡Ã¬ar no frame 0	
+jr s5
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+TROCA_FRAME:
+#li a0, %delay
+#Delay antes de trocar o frame
+li a7, 32	
+ecall
+
+li a5, 0xFF200604	#Carrega o endere?o responsÂ¨Â¢vel pela troca de frame
+lw t1, 0(a5)		#Carrega-o em t1 para manipular
+xori t1, t1, 0x001 	#Inverte o valor atual
+sw t1, 0(a5)		#Armazena de volta em a5 o valor invertido
+#Delay antes de trocar o frame
+li a7, 32	
+
+ecall
+
+li a5, 0xFF200604	#Carrega o endere?o responsÂ¨Â¢vel pela troca de frame
+lw t1, 0(a5)		#Carrega-o em t1 para manipular
+xori t1, t1, 0x001 	#Inverte o valor atual
+sw t1, 0(a5)		#Armazena de volta em a5 o valor invertido
+jr s5
+
+
 #--------------------------------------------------------------------------------------------------------------------------------------------------------#
 IMPRESSAO:
 
@@ -172,38 +234,84 @@ POSICAO_CODIGO:  .word 0, 0	# o primeiro valor corresponde ao frame 0, o segundo
 
 v:  		.byte 0xDE, 0x18, 71, 0x90, 0xEF, 0xBB, 0xF1, 0xA1, 0x6D, 0x1E, 0x2F, 54, 0x60, 0xAF, 82
 
-Password: 	.word
+Password: 	.byte -1, -1, -1, -1
 
-PINO:		.word 0, 0, 0, 0
+PINO:		.byte -1, -1, -1, -1
+
+
+
+Usuario:	.byte -1, -1, -1, -1
+Usuario_aux: 	.byte -1, -1, -1, -1
 #cores disponiveis no momento
 N:		.word	5
-
 
 .text
 
 MAIN:
+li a0, 2000
+li a7, 32
+ecall
 
+
+la s7, Password
+la s6, v
+li s0, 5 #Valor de N
+li s1, 4
+
+LOOP:
+beq t0, s1, FORA_DO_LOOP
+
+
+GERAR_ALEATORIO:
+
+#Time
+li a7, 30
+ecall
+
+#RandSeed
+li a7, 40
+ecall
+
+#Definir limite
+mv a1, s0
+
+#Somar valor aleatorio (n sei pq)
+addi a0, a0, 272
+
+#Gera o numero
+li a7, 42
+ecall
+
+ARMAZENAR_PASSWORD:
+add t1, t0, s7
+
+add t2, a0, s6
+lb a0, 0(t2)			#cor bola
+
+sb a0, (t1)
+addi t0, t0, 1
+j LOOP
+
+FORA_DO_LOOP:	
 	
-		
-			
-				
-					
-						
-							
-									
+#comeca frame 1
+li t0, 1
+jal s5, FRAME
+														
 #Print tela jogo
 	la t0, Tabuleiro
 	li s0,0xFF000000	
 	li a0, 1000
 	jal s5, IMPRESSAO
-
+	
+	
 
 	#li  s3, 15	#tamanho da lista v (n)+1
 	li s4, 0	#contador bola jogador
-	li s9,0xFF001A64 #posicao bola jogador
+	li s9,0xFF001A65 #posicao bola jogador
 	
 	li s7, 0	#contador bola cor disponivel
-	li s8,0xFF00D4C5 #posicao bola cor disponivel
+	li s8,0xFF00D604 #posicao bola cor disponivel
 
 	
 
@@ -247,8 +355,8 @@ BOLA_COR_BAIXO:
   
         addi 	s8,s8,1200  #se faz 4 addi pq imm tem limite de 12 bits
         addi 	s8,s8,1200  
+        addi 	s8,s8,1200
         addi 	s8,s8,1032
-        addi 	s8,s8,1199 
  	             			
 				
 CONTINUA_DIREITA_COR:       
@@ -257,7 +365,9 @@ j LOOP_COR_N
 							
 FIM_COR_N:								
 										
-	
+	#VOLTA PARA FRAME 0
+	li t0, 0
+	jal s5, FRAME
 # Polling do teclado e echo na tela
 
 	la s6, v
@@ -274,6 +384,11 @@ KEY2:	li t1,0xFF200000		# carrega o endere?o de controle do KDMMIO
   	lw t2,4(t1)  			# le o valor da tecla tecla
 	#sw t2,12(t1)  			# escreve a tecla pressionada no display
 BLA: 	addi t3, t2, -97
+	la t2, N
+	lb t2, 0(t2)
+	li t0, -1
+	blt t3, t0, KEY2
+	bge t3, t2, KEY2
 	add t3, t3, s6
 	lb s2, 0(t3)			#cor bola
 	
@@ -282,10 +397,7 @@ BLA: 	addi t3, t2, -97
 	
 LOOP_MAIN:
 	
-	
-	li a0, 1000
-	li a7, 32
-	ecall
+
 
 	#Print bola
 	la t0, Bola
@@ -295,10 +407,36 @@ LOOP_MAIN:
 	#li s2, 300
 	jal s5, IMPRESSAO_BOLA
 	
-		
+	#sound de ter colocado a tentativa
+	li a0,41	#nota
+	add a0, a0, s4
+	li a1,500	#time
+	li a2,0		#instrumento
+	li a3,127	#volume
+	li a7,33
+	ecall	
+	
+	#Armazena a cor escolhida
+	la t5, Usuario
+	add a3, t5, a4
+	sb s2, 0(a3)
+	
         addi    s4,s4,1	#soma contador
+        addi	a4,a4,1 #soma contador de verificacao
         
         
+        #Confere se esta na hora de imprimir os pinos
+        li t0, 4
+        rem t1, s4, t0	#se contador for divisivel por 4, proxima bola é para baixo
+        beq t1, zero, PRINT_PINOS
+        
+CONTINUA_PINOS: 
+	#Confere se a pessoa perdeu
+	li t0, 40
+        rem t1, s4, t0	#se contador for divisivel por 4, proxima bola é para baixo
+        beq t1, zero, YOUDIED
+     
+               
         #Confere se esta na hora de ir para proxima coluna
         li t0, 20
         rem t1, s4, t0	#se contador for divisivel por 4, proxima bola é para baixo
@@ -307,9 +445,7 @@ LOOP_MAIN:
         #Confere se esta na hora de ir para proxima linha
         li t0, 4
         rem t1, s4, t0	#se contador for divisivel por 4, proxima bola é para baixo
-        beq t1, zero, BOLA_BAIXO
-        
-        
+        beq t1, zero, VERIFICA_BOLA
         
         
 #Move bola para direita
@@ -319,10 +455,13 @@ BOLA_DIREITA:
         
 #Move para proxima coluna 
 NOVA_COLUNA:
- 	li s9,0xFF0019A6 #posicao bola jogador  na nova coluna         
+ 	li s9,0xFF001AE7 #posicao bola jogador  na nova coluna         
         j CONTINUA_DIREITA
         
 #Move bola para direita
+VERIFICA_BOLA:
+	li a4, 0
+	#VERIFICA
 BOLA_BAIXO:        
         addi 	s9,s9,1742 #se faz 4 addi pq imm tem limite de 12 bits
         addi 	s9,s9,1742 
@@ -334,10 +473,297 @@ CONTINUA_DIREITA:
 
 FIM:	ret				# retorna
 
+PRINT_PINOS:
+#Verificar senha, e montar pinos
+
+#### LA #######
+la s0, Password
+la s1, PINO
+la s2, Usuario
+la s3, Usuario_aux
+##############################################################################
+#0 igualar o vetor pinos ao vetor password, igualar o vetor jogador_aux ao vetor jogador
+PARTE_0:
+li t0, 0
+li t3, 4
+
+DUPLICAR:
+bge t0, t3, PRE_DUPLICAR_2
+add t1, s0, t0
+lb a1, (t1)
+add t2, s1, t0
+sb a1, (t2)
+addi t0, t0, 1
+j DUPLICAR
+
+PRE_DUPLICAR_2:
+li t0, 0
+
+DUPLICAR_2:
+bge t0, t3, PARTE_1
+add t1, s2, t0
+lb a1, (t1)
+add t2, s3, t0
+sb a1, (t2)
+addi t0, t0, 1
+j DUPLICAR_2
+
+###############################################################################
+#1 verificar se tem o mesmo elemento na mesma posicao nos vetores password e jogador, caso tenha, substitua o elemento por 2 no vetor pinos e substitua por 0 no vetor jogador_aux:
+PARTE_1:
+li t0, 0
+li t1, 4
+
+LOOPe:
+bge t0, t1, PARTE_2 # Va para a parte 2
+add t2, s0, t0 # Endereco do vetor password + posicao
+add t3, s2, t0 # Endereco do vetor jogador + posicao
+lb a1, (t2) # Carregar elemento na posicao t0 do vetor password
+lb a2, (t3) # Carregar elemento na posicao t0 do vetor jogador
+beq a1, a2, VERIFICACAO_1 # Se na mesma posicao do vetor password e jogador tiver o mesmo elemento, va para verificacao_1
+addi t0, t0, 1
+j LOOPe
+
+VERIFICACAO_1:
+add t2, s1, t0 # Endereco do vetor pino + posicao
+li t3, 2
+sb t3, (t2) # Substitui o elemento por "2"
+add t2, s3, t0 # Endereco do vetor jogador_aux + posicao
+li t3, 0
+sb t3, (t2) # Substitui o elemento por "0"
+addi t0, t0, 1
+j LOOPe
+
+#############################################################################
+#2 apos verificar todos os elementos, recome?a, utilizando o vetor jogador_aux, verificando apenas a existencia do elemento no vetor password, caso exista, substitua o elemento por 1 no vetor pinos
+
+PARTE_2:
+li t0, 0
+li t1, 0
+li t2, 4
+
+LOOP_2: #for i in range(4)
+bge t0, t2, PARTE_3
+add t3, s3, t0
+lb a1, (t3) # jogador_aux[i]
+	LOOP_3: #for j in range(4)
+	bge t1, t2, PRE_LOOP_2
+	add t4, s1, t1
+	lb a2, (t4) # pino[j]
+	beq a1, a2, VERIFICACAO_2
+	addi t1, t1, 1
+	j LOOP_3
+
+VERIFICACAO_2:
+add t3, s1, t1
+li t4, 1
+sb t4, (t3) # pino[j] = 1
+PRE_LOOP_2:
+addi t0, t0, 1
+li t1, 0
+j LOOP_2
+
+##########################################################################
+#3 substitua todo valor que nao eh igual a 1 e 2 por 0
+
+PARTE_3:
+li t0, 0
+li t1, 4
+li t2, 1
+li t3, 2
+
+LOOP_4: #for i in range(4)
+bge t0, t1, PARTE_4
+add t4, s1, t0
+lb a1, (t4) # pino[i]
+beq a1, t2, PRE_LOOP_4
+beq a1, t3, PRE_LOOP_4
+VERIFICACAO_3:
+sb zero, (t4)
+PRE_LOOP_4:
+addi t0, t0, 1
+j LOOP_4
+
+##########################################################################
+ #4 comparar com a password
+ PARTE_4:
+ li t0, 0
+ li t1, 4
+ 
+ LOOP_5:
+ bge t0, t1, WIN
+ add t2, s1, t0
+ lb a1, (t2)
+ li t3, 2
+ bne a1, t3, NOT_WIN
+ addi t0, t0, 1
+ j LOOP_5
+    
+NOT_WIN:
+
+#sort dos pinos
+	# BUBBLE SORT
+	.eqv VEC s0
+	.eqv VEC_SIZE s1
+	.eqv COUNTER t0
 	
+	li COUNTER, 0
+	li VEC_SIZE, 4
+	
+	.eqv COUNTER_A s2
+	.eqv COUNTER_B s3
+	
+	li COUNTER_A, 0
+	li COUNTER_B, 0
+	la VEC, PINO
+	
+	BUBBLE_ONE:
+		beq COUNTER_A, VEC_SIZE, END_BUBBLE_ONE #for i in range(counter_A):
 		
-				
+		mv COUNTER_B, COUNTER_A
+		addi COUNTER_B, COUNTER_B, 1
+		
+		li t0, 1
+		mul t1, COUNTER_A, t0
+		add t1, t1, VEC #vec[i]
+		
+		BUBBLE_TWO:	
+			beq COUNTER_B, VEC_SIZE, END_BUBBLE_TWO	
+			
+			mul t2, COUNTER_B, t0
+			add t2, t2, VEC
+			
+			lb t3, (t1)
+			lb t4, (t2)
+			
+			blt t3, t4, NO_SWAP 
+			
+			sb t3, (t2)
+			sb t4, (t1)
+			
+			NO_SWAP:
+				addi COUNTER_B, COUNTER_B, 1
+				j BUBBLE_TWO
+		END_BUBBLE_TWO:
+		addi COUNTER_A, COUNTER_A, 1
+		j BUBBLE_ONE
+	END_BUBBLE_ONE:
+	
+	li COUNTER, 0
+	mv s7, s9	#move para s7 a posicao das bolas jogador
+	addi s7, s7,1942 #coloca na posicao pino[0] 
+	la s8, PINO
+	mv s10, s8
+	addi s10, s10, -4
+PRINT_PINO_SORTED:
+
+lb t2, 3(s8) #sort fica de trás pra frente
+
+li t1, 0
+beq t1, t2, PINO_VAZIO
+
+li t1, 1
+beq t1, t2, PINO_UM
+
+li t1, 2
+beq t1, t2, PINO_DOIS
+
+
+
+PINO_DOIS:
+li s2, 0
+j PULA_PINO_UM
+
+PINO_UM:
+li s2, 0xFF
+
+PULA_PINO_UM:
+
+la t0, PINO_IM
+mv s0, s7
+li a0, 32
+li s1, 0x13C
+jal s5, IMPRESSAO_BOLA
+
+
+PINO_VAZIO:
+addi s7, s7, 7
+addi s8, s8, -1
+beq  s10, s8, CONTINUA_PINOS
+j PRINT_PINO_SORTED
+
+#Derrota no jogo
+YOUDIED:
+	li s8, 0xFF00B1F4
+	li s9, 0
+	la s4, Password
+	
+YOUDIED_LOOP:		
+	lb s2, 0(s4)
+						
+	la t0, Bola
+   	mv s0, s8
+	li a0, 32
+	li s1, 0x130
+	jal s5, IMPRESSAO_BOLA	
+						
+	addi s8, s8, 24
+	addi s4, s4, 1	
+	addi s9, s9, 1
+	li t0, 4
+	beq t0, s9, RESET
+	j YOUDIED_LOOP				
+	
+RESET:
+	li s0, 5	#reseta N para 5
+	la t0, N
+	sw s0, 0(t0)
+	
+	li a0, 2000
+	li a7, 32
+	ecall
+	
+	la t0, YouDied
+	li s0,0xFF100000	
+	li a0, 1000
+	jal s5, IMPRESSAO
+	#VOLTA PARA FRAME 1
+	li t0, 1
+	jal s5, FRAME		
+	
+	j MAIN
+											
+WIN:	
+	li s8, 0xFF00B1F4
+	li s9, 0
+	la t0, N
+	lw s0, 0(t0)
+	addi s0, s0, 1	#aumenta N em 1
+	sw s0, 0 (t0)
+	la s4, Password
+WIN_LOOP:		
+	lb s2, 0(s4)
+						
+	la t0, Bola
+   	mv s0, s8
+	li a0, 32
+	li s1, 0x130
+	jal s5, IMPRESSAO_BOLA	
+						
+	addi s8, s8, 24
+	addi s4, s4, 1	
+	addi s9, s9, 1
+	li t0, 4
+	beq t0, s9, FIM_MAIN
+	j WIN_LOOP					
+																
 FIM_MAIN:
+	la t0, N
+	lw s0, 0(t0)
+	li t1, 16
+	bge t1, s0, MAIN	#CONFERE se a pessoa zerou o jogo com condicao de N ser 17
+	
+	#Encerra o jogo
 	li      a7,11 
         li      a0,10 
         ecall 
@@ -348,3 +774,5 @@ AA:
 .data
 .include "./Imagens/Tabuleiro.data"
 .include "./Imagens/Bola.data"
+.include "./Imagens/PINO_IM.data"
+.include "./Imagens/YouDied.data"
