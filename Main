@@ -244,7 +244,7 @@ PINO:		.byte -1, -1, -1, -1
 Usuario:	.byte -1, -1, -1, -1
 Usuario_aux: 	.byte -1, -1, -1, -1
 #cores disponiveis no momento
-N:		.word	12
+N:		.word	5
 
 .text
 
@@ -405,7 +405,7 @@ LOOP_MAIN:
 	#Print bola
 	la t0, Bola
    	mv s0,s9
-	li a0, 32
+	li a0, 0
 	li s1, 0x130
 	#li s2, 300
 	jal s5, IMPRESSAO_BOLA
@@ -678,16 +678,64 @@ beq t1, t2, PINO_DOIS
 
 PINO_DOIS:
 li s2, 0	#cor
-j PULA_PINO_UM
 #Sound
 
 
+#play_sound(45, 150, 62, 50)
+#play_sound(47, 200, 62, 50)
+#play_sound(44, 100, 62, 50)
+
+li a0,45	#nota
+li a1,150	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
+
+li a0,47	#nota
+li a1,200	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
+
+li a0,44	#nota
+li a1,100	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
+
+j PULA_PINO_UM
 
 PINO_UM:
 li s2, 0xFF	#cor
 #Sound
 
+#play_sound(35, 250, 62, 50)
+#play_sound(35, 250, 62, 50)
+#play_sound(35, 600, 62, 50)
 
+li a0,35	#nota
+li a1,250	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
+
+li a0,35	#nota
+li a1,250	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
+
+li a0,35	#nota
+li a1,600	#time
+li a2,62	#instrumento
+li a3,50	#volume
+li a7,33
+ecall
 
 PULA_PINO_UM:
 
@@ -698,7 +746,9 @@ li s1, 0x13C
 jal s5, IMPRESSAO_BOLA
 
 
+
 PINO_VAZIO:
+
 addi s7, s7, 7
 addi s8, s8, -1
 beq  s10, s8, CONTINUA_PINOS
