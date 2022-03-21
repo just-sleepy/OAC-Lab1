@@ -249,6 +249,7 @@ N:		.word	5
 .text
 
 MAIN:
+li a4, 0
 li a0, 2000
 li a7, 32
 ecall
