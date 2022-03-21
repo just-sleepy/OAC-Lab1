@@ -232,8 +232,9 @@ POSICAO_CODIGO:  .word 0, 0	# o primeiro valor corresponde ao frame 0, o segundo
 
 #lista de cores possiveis para N
 
-v:  		.byte 0xDE, 0x18, 71, 0x90, 0xEF, 0xBB, 0xF1, 0xA1, 0x6D, 0x1E, 0x2F, 54, 0x60, 0xAF, 82
-
+v:  		.byte 0xDE, 0x18, 71, 0x90, 0xEF, 0xBB, 0xF1, 0xA1, 0x6D, 0x1E, 0x2F, 54, 0x60, 0xAF, 82, 3
+Midi:		.byte 49, 51, 53, 55, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78
+			 
 Password: 	.byte -1, -1, -1, -1
 
 PINO:		.byte -1, -1, -1, -1
@@ -243,7 +244,7 @@ PINO:		.byte -1, -1, -1, -1
 Usuario:	.byte -1, -1, -1, -1
 Usuario_aux: 	.byte -1, -1, -1, -1
 #cores disponiveis no momento
-N:		.word	5
+N:		.word	12
 
 .text
 
@@ -257,7 +258,7 @@ la s7, Password
 la s6, v
 li s0, 5 #Valor de N
 li s1, 4
-
+li t0, 0
 LOOP:
 beq t0, s1, FORA_DO_LOOP
 
@@ -389,6 +390,8 @@ BLA: 	addi t3, t2, -97
 	li t0, -1
 	blt t3, t0, KEY2
 	bge t3, t2, KEY2
+	mv a6, t3
+	
 	add t3, t3, s6
 	lb s2, 0(t3)			#cor bola
 	
@@ -408,8 +411,9 @@ LOOP_MAIN:
 	jal s5, IMPRESSAO_BOLA
 	
 	#sound de ter colocado a tentativa
-	li a0,41	#nota
-	add a0, a0, s4
+	la t0, Midi
+	add t0, t0, a6	#soma posicao para ver a nota
+	lb a0, 0 (t0)
 	li a1,500	#time
 	li a2,0		#instrumento
 	li a3,127	#volume
@@ -455,6 +459,8 @@ BOLA_DIREITA:
         
 #Move para proxima coluna 
 NOVA_COLUNA:
+	li a4, 0
+	#VERIFICA
  	li s9,0xFF001AE7 #posicao bola jogador  na nova coluna         
         j CONTINUA_DIREITA
         
@@ -671,11 +677,17 @@ beq t1, t2, PINO_DOIS
 
 
 PINO_DOIS:
-li s2, 0
+li s2, 0	#cor
 j PULA_PINO_UM
+#Sound
+
+
 
 PINO_UM:
-li s2, 0xFF
+li s2, 0xFF	#cor
+#Sound
+
+
 
 PULA_PINO_UM:
 
@@ -727,6 +739,7 @@ RESET:
 	li s0,0xFF100000	
 	li a0, 1000
 	jal s5, IMPRESSAO
+	
 	#VOLTA PARA FRAME 1
 	li t0, 1
 	jal s5, FRAME		
@@ -763,6 +776,16 @@ FIM_MAIN:
 	li t1, 16
 	bge t1, s0, MAIN	#CONFERE se a pessoa zerou o jogo com condicao de N ser 17
 	
+	
+	la t0, Venceu
+	li s0,0xFF100000	
+	li a0, 1000
+	jal s5, IMPRESSAO
+	
+	#VOLTA PARA FRAME 1
+	li t0, 1
+	jal s5, FRAME	
+	
 	#Encerra o jogo
 	li      a7,11 
         li      a0,10 
@@ -776,3 +799,4 @@ AA:
 .include "./Imagens/Bola.data"
 .include "./Imagens/PINO_IM.data"
 .include "./Imagens/YouDied.data"
+.include "./Imagens/Venceu.data"
